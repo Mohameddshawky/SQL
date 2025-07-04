@@ -1,0 +1,209 @@
+--functions: block of query (DB object)
+
+--type:
+--1. scalar func (return one value)
+--2. table valued func(return table)
+
+--built in func 
+---------------------------------------------
+--1.aggregate func(count, sum,avg,max,min)scalar
+--take one param
+USe ITI
+--1.1 count (not count null value)(column name or *)
+select Count(salary)
+from Instructor
+-- sum(column name)numerical value only
+select sum(salary)/count(salary)
+from Instructor
+
+select avg(salary)--sum/count
+from Instructor
+----------------------------------------
+
+Select * , Min(Salary) over (Partition by Dept_Id)
+from Instructor
+-----------------------------
+select max(salary)--take any data type
+from Instructor
+
+Select distinct Dept_Id , Min(Salary) Over (Partition by Dept_Id)
+from Instructor
+-- Parition by + Distinct = Group by 
+
+select max(Ins_Name)--take any data type
+from Instructor
+---------------------------------------
+--2 NULL function
+-- isnull    /   coalesce
+--2.1 isnull(arg1,arg2)if arg1 is null 
+--            go to arg2 if null return null
+
+--must data type be compatable int in string true
+select isnull(St_Fname,St_Lname) --can take string in arg2
+from Student
+
+select isnull(Salary,0)
+from Instructor
+--coalesce take more than two param
+select coalesce(St_Fname,St_Lname,'no name') 
+from Student
+------------------------------------------
+--conversion func
+-- Casting :convert from data type to another one
+--1 convert(data type ,target)
+select St_Fname+' '+convert(varchar(20),St_Age)
+from Student
+
+select St_Fname+' '+isnull(convert(varchar(20),St_Age),'no age')
+from Student
+-- 2 cast(target as datatype)
+
+select St_Fname+' '+isnull(cast(St_Age as varchar(50)),'no age')
+from Student
+
+-- Concat_WS : Take first parameter seprator to separate with it
+Select Concat_WS('   ' , St_Age , St_Fname , St_Address)
+from Student 
+--cast from data to string
+ select GETDATE()
+ --convert take third parm  about style
+ select convert(varchar(max),GETDATE())--May 30 2025  3:39PM
+ select convert(varchar(max),GETDATE(),101)--05/30/2025
+ select convert(varchar(max),GETDATE(),102)--2025.05.30
+ select convert(varchar(max),GETDATE(),103)--30/05/2025
+ select convert(nvarchar(max),GETDATE(),130)-- 3 ذو الحجة 1446  3:41:16:330PM
+ -------------------------------------------------
+ --4 date and time func
+ select SYSDATETIME()
+ select SYSutcDATETIME()
+ select GETDATE()
+ select DATEname(day,'5/30/2025')
+  select DATEname(MONTH,'5/30/2025')
+ select MONTH(GETDATE())
+ select DATEname(day,GETDATE())
+select DATEname(WEEKDAY,GETDATE())--name of this day
+select DATEname(WEEKDAY,'2/14/2005')--name of this day
+--DAy(),month(),year()
+select isDate('2/14/2005')--return t or f
+select eomonth('2/14/2005')--last day of this month
+----------------------------------------------
+Select Parse('Monday,13December 2010' as date) 
+Select Parse('Mariam,13Shindy 2010' as date) 
+Select Convert (Xml , 4)
+Select Try_Parse('Mariam,13Shindy 2010' as date) 
+Select DatePart(Day,'12-11-2004')
+Select DatePart(Month,'12-11-2004')
+Select DatePart(Year,'12-11-2004')
+--string func 
+-- concat 
+-- convert any type to var char and cocat it
+select concat(St_Fname,St_Lname,St_Age)
+from Student
+
+select upper(St_Fname)
+from Student
+
+select lower(St_Fname)
+from Student
+
+select s.St_Fname, len(St_Fname)
+from Student s
+
+select SUBSTRING('mohamed ahmed',2,5)
+from Student s
+
+select ascii('a')
+--------------------------------------------
+--format
+
+select format(salary,'###,###')
+from Instructor
+
+select format(123456789,'###,###')
+Select FORMAT(123456789, '#,##0.##0#/###')
+
+Select FORMAT(GETDATE(), 'd', 'en') -- 5/27/2025
+Select FORMAT(GETDATE(), 'dd') -- 27
+Select FORMAT(GETDATE(), 'ddd') -- Tue
+Select FORMAT(GETDATE(), 'dddd') -- Tuesday
+Select FORMAT(GETDATE(), 'dddd MM') -- Tuesday 05
+Select FORMAT(GETDATE(), 'dddd MMM') -- Tuesday May
+Select FORMAT(GETDATE(), 'dddd MMM d') -- Tuesday May 27
+Select FORMAT(GETDATE(), 'dddd MMMM yyyy') -- Tuesday May 2025
+Select FORMAT(GETDATE(), 'dd MMMM yyyy') -- 27 May 2025
+Select FORMAT(GETDATE(), 'ddd MMM yyyy') -- Tue 05 2025
+Select Ascii('Belal')
+Select Ascii('B')
+Select Left('Mariam',3)
+Select Right('Mariam',3)
+Select Trim('         Mariam             ') as word
+Select '         Mariam           '
+Select LTrim('         Mariam') as LTRIM_word
+Select RTrim('Mariam              ') as RTRIM
+Select 'Mariam              ' 
+Select Replace('Mari000am','0','a') --Change any 0 to a
+Select Replace('Mari000am0','000','aaa') --Change pattern with another pattern
+Select Reverse('abc')
+------------------------------------------------
+--top:to get top row from table
+
+select top(5)*
+from Student
+
+select top(5) St_Id, St_Fname, St_Age
+from Student;
+
+
+select top(5) St_Id, St_Fname, St_Age
+from Student
+ORDER BY St_Id desc;
+
+
+select top(5) St_Id, St_Fname, St_Age
+from Student
+WHERE St_Age is not null
+ORDER BY St_Age;
+-------------------------------
+--top with tie get all row equal to last rowin top
+select top (5)with ties St_Id, St_Fname, St_Age--8 row
+from Student
+WHERE St_Age is not null
+ORDER BY St_Age;
+---------------------------------------
+-- Random Select demonstration
+-- NEWID() --> Generates a GUID
+-- GUID -> Globally Unique Identifier
+-- Unique identifier
+-- 32-digit hexadecimal - Format: 8-4-4-4-12  
+
+select NEWID()  -- Example output: B85B0F02-9780-4400-B472-C6559C272E91
+
+select top(3) s.St_Id,s.St_Fname,s.St_Age
+from Student s
+order by NEWID()
+----------------------------------------
+--GROUP BY
+--cant group by with *
+--group=partition+distincit
+select s.Dept_Id,s.St_Address,count(*)
+from Student s
+where s.Dept_Id is not null
+group by s.Dept_Id,s.St_Address
+ 
+ select distinct  d.Dept_Id,min(salary)over (partition by d.Dept_id)
+ from Instructor d
+-- must use group by on all column use in select
+--any column +aggrigatr func must use in group by
+Select i.Dept_Id,d.Dept_Name,sum(salary)
+from Instructor i join Department d
+on d.Dept_Id= i.Dept_Id
+group by i.Dept_Id,d.Dept_Name
+-------------------------------------------
+select max(s.St_Age)
+from Student s
+having MAX(s.St_Age)!=44
+------------------------------------------
+--having use with aggregate
+select s.Dept_Id,count(*)
+from Student s
+group by s.Dept_Id
