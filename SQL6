@@ -1,0 +1,210 @@
+--------------------stored procedure-------------------------
+--pre compiled and cached
+--built in sp :
+sp_help 'student' -- information about table
+-- user defined sp
+go
+ create or alter proc --or procedre 
+   sp_studendbyid(@stid int)
+   as
+   Select*from 
+   student
+   where St_Id=@stid
+go
+sp_studendbyid 1
+exec sp_studendbyid 2
+execute sp_studendbyid 3
+--if use variable must ues exec
+declare @id int =5
+execute sp_studendbyid @id
+
+-------------------------------------------
+go
+ create or alter proc sp_studendbyAddress @stAdd varchar(20) 
+   with encryption
+   as
+   Select St_Id,St_Fname,St_Address 
+   from student
+   where St_Address=@stAdd
+go
+
+sp_studendbyAddress 'cairo'
+create table sttest(
+id int primary key,
+Stname varchar(20),
+Staddress varchar(30)
+)
+--insert based on execute
+
+insert into sttest
+exec sp_studendbyAddress 'cairo'
+-------------------------------------------
+---error handling
+go
+create or alter proc deleteTopicByid(@id int)
+as
+begin try
+delete from topic
+where Top_Id=@id
+end try
+begin catch
+  print 'you cant delete it'
+end catch
+go
+deleteTopicByid 1
+------------------------------------------
+--input parameterr
+go
+create or alter proc sumTwonumber(@x int,@y int=5)
+as 
+select @x+@y
+sumTwonumber 3,4 --passing param by position
+sumTwonumber @y=4,@x=3 --passing param by name
+sumTwonumber 4
+-------------------------------------------
+---------------------outparameter---------
+go
+create or alter proc StudNameAgeById(@id int, 
+@name varchar(20)output,@age int output)
+as
+
+ select @name=St_Fname,@age=St_Age
+ from  student 
+ where St_Id=@id
+ go
+ declare @n varchar(20),@A int 
+exec StudNameAgeById 5,@n output,@A  output
+select @n,@A
+-------------------------------------------
+--functions / view / sp
+
+-- all of them are DB objects 
+-- all of them evaluate reusability 
+-- all of them have better performance than writing the query without using them
+------------------------------------------------
+-- Trigger:
+--triggers:special type of sp
+--1 cant be called
+--2 cant take parameters
+
+-- Types Of SP (Stored Procedures):
+-- 1. User-Defined
+-- 2. Built-in
+-- 3. Special SP: Trigger
+--    		: 1. You Can't Call It Directly
+--    		: 2. Takes No Parameters
+
+-- Trigger will fire When event occured
+-- type of triggers:
+--1 :Dml trigger[table,view]
+--2 :DDL triggger[DB,server]
+--3 :log on trigger
+
+
+-- Triggers execute after action ot instead of the action
+-- Examples :
+
+GO
+CREATE OR ALTER TRIGGER Tri_Welcome  
+ON Student  
+AFTER INSERT  
+AS  
+    PRINT 'Welcome To III Ya Handasa :)'
+GO
+INSERT INTO Student(St_Id, St_Fname, St_Address, St_Age)
+VALUES(40, 'Ahmed', 'Cairo', 30) -- after this the trigger will execute
+
+-- it can has 2 triggers run at the same time
+-------------------------------------------------
+GO 
+Create Or Alter Trigger Tri_NotifyOnUpdateStudent
+On Student
+With Encryption
+After Update
+as
+Select SUSER_NAME() as UpdateBy, GETDATE() as UpdateOn
+GO
+Update Student  
+Set St_Fname = 'Omar'  
+Where St_Id = 40
+---------------------------------------------
+GO
+Create OR alter Trigger Tri_DisableDeleteStudent
+On Student
+With Encryption
+Instead Of Delete
+as
+    print 'U Can not Delete From'
+GO
+Delete From Student  
+Where St_Id = 40 ---> this will prevent the deletion but will show that 1 row affected and this means that there is an insertion done to the deletion table with the value that wanted to be deleted
+----------------------------------------------------
+--to prevent of insert
+GO
+Create OR alter Trigger Tri_DisableDmlDepartment
+On Department
+With Encryption
+Instead Of insert,update,delete
+as
+    print 'U Can not Do any thing From'
+GO
+update Department 
+set Dept_Name='api'
+where Dept_Id=100
+--------------------------------------------------
+-- How to enable and disable triggers:
+    Alter table Deaprtment 
+     Disable Trigger Tri_DisableDmlDepartment
+
+---> DISABLE TRIGGER "trigger name"
+     ON Department
+
+
+---> Alter table Deaprtment 
+     Enable Trigger "trigger name"
+
+---> ENABLE TRIGGER "trigger name"
+     ON Department  
+	 
+---------------------
+-- The Most Important Point On Trigger  
+-- When Fire The Tigger Two Table Will Be Created In Runtime  
+-- Inserted  will contain inserted value
+-- Deleted   will contain deleted value
+-- update   inserted and delete
+-------------------------------------------
+go
+create or alter trigger DisblayupdatedDataonCourse
+on course
+with encryption
+after update
+as
+select *from deleted
+select *from inserted
+
+update Course
+set Crs_Name='java'
+where Crs_Id=100
+ --------------------------------------
+ --log on trigger
+ --DDL can create many object with same name
+
+ --create alter drop
+
+ --1:server scope
+ go
+   create or alter trigger NotfiyDBcreation
+   on all server 
+   with encryption
+   after create_Database
+   as
+   select 'hello DB created sucessfuly'
+
+ --2: DB
+ go
+   create or alter trigger NotfiyoncreationOFTable
+   on Database
+   with encryption
+   after create_Table
+   as
+   select 'hello Table created sucessfuly'
