@@ -1,0 +1,322 @@
+
+-- 1. SubQuery:
+-- Output Of SubQuery Used As Input To Another Query [Outer Query]
+
+-- Outer Query
+Select St_Id, St_Fname, St_Age
+From Student
+Where St_Age > (Select Avg(St_Age) From Student) -- SubQuery (Inner Query)
+
+-- Note : SubQuery Will Execute First.
+
+Select St_Id, St_Fname, St_Age  
+From Student  
+Where St_Age > Avg(St_Age)  --> Invalid  
+
+--- Having Work With Group.  
+--- Where Work With Record. 
+
+Select St_Id, St_Fname, St_Age  
+From Student  
+Having Avg(St_Age) < St_Age  --> Invalid  
+
+Select St_Id, COUNT(*)  
+From Student  --> Invalid  
+
+Select St_Id, COUNT(*)  
+From Student  
+group by st_id
+
+-- Outer Query  
+Select St_Id, (Select Count(*) From Student) -- SubQuery (Inner Query)  
+From Student  
+
+Select Distinct Dept_Id  
+From Student  
+Where Dept_Id is not null 
+
+Select Dept_Name  
+From Department  
+Where Dept_Id = 10 Or Dept_Id = 20 Or Dept_Id = 30 Or Dept_Id = 40  
+
+              -- Another Way To Write the Values Of Departments:
+Select Dept_Name  
+From Department  
+Where Dept_Id in (10,20,30,40)  
+ 
+Select Dept_Name  
+From Department  
+Where Dept_Id in (Select Distinct Dept_Id  
+    From Student  
+    Where Dept_Id is not null)
+  
+              -- Another Way To Get The Same Result But With Using Join:
+Select Distinct D.Dept_Name  
+From Student S, Department D  
+Where D.Dept_id = S.Dept_id -- PK = FK  
+
+--[--- Best Practice For This Example Using Join Instead Of SubQuery ]
+
+
+Select Max(Salary)  
+From Instructor
+
+Select *  
+From Instructor  
+Order By Salary desc  
+
+Select Max(Salary)  
+From Instructor  
+Where Salary != (Select Max(Salary) From Instructor)  --> Shows Value Of Second Highest Salary
+
+-- Id , Name, Salary  -- Want To Show Info Of The Instuctor That His Salary was choosen Above
+Select Ins_Id, Ins_Name, Salary , Max(Salary)  
+From Instructor  
+Where Salary != (Select Max(Salary) From Instructor)  --> Invalid  
+
+Select Top(2) Ins_Id, Ins_Name, Salary  
+From Instructor  
+Order By Salary Desc  
+
+Select Top(1) * From  
+(Select Top(2) Ins_Id, Ins_Name, Salary  
+From Instructor  
+Order By Salary Desc) as T  
+Order By Salary
+
+Select Top(50) PERCENT *
+from Student 
+
+---------------------------------------------------------------------------
+
+-- 2. Ranking Functions  
+------------------------>
+ 
+--2.1. Row_Number()  
+Select Ins_Id, Ins_Name, Salary, ROW_NUMBER() over (Order by Salary Desc) as RN  
+From Instructor  -- 1 2 3 4 5 no repetion
+
+--2.2. Dense_Rank()  
+Select Ins_Id, Ins_Name, Salary, Dense_Rank() over (Order by Salary Desc) as RN  
+From Instructor  -- 1 1 2 2 3 4 5  no skip
+ 
+--2.3. Rank()  
+Select Ins_Id, Ins_Name, Salary, Rank() over (Order by Salary Desc) as RN  
+From Instructor --1 2 2 4 5 
+
+--2.4. NTile(int)
+Select Ins_Id, Ins_Name, Salary, NTILE(3) Over (Order By Salary Desc) as RN
+From Instructor
+
+-------------------------------------------
+--use partition by
+-- apply rank on each group
+select s.St_Fname,s.St_Age ,row_number() over(partition by s.Dept_id order by s.st_age)as rn
+from Student s 
+
+Select * 
+from 
+(Select St_Id , St_Fname , St_age , 
+Row_Number()  over (Order by St_Age desc)[RN] -- 3
+from Student) as Subquery
+Where RN in (1,2)
+
+-- Using Top  
+Select Top(2) St_Id, St_Fname, St_Age  
+From Student  
+Order By St_Age Desc  
+
+-- Using Ranking  
+Select St_Id, St_Fname, St_Age, ROW_NUMBER() Over (Order by St_Age Desc) as RN  
+From Student
+Where RN <= 2  -- Invalid bec exe order
+
+Select * From  
+(Select St_Id, St_Fname, St_Age, ROW_NUMBER() Over (Order by St_Age Desc) as RN  
+From Student) as T  
+Where RN <= 2  
+
+-- Using TOP():
+Select Top(1) * From  
+(Select Top(5) St_Id, St_Fname, St_Age  
+From Student  
+Where St_Age is not null  
+Order By St_Age ) as T  
+Order By St_Age Desc  
+
+-- Using Ranking:
+Select St_Id, St_Fname, St_Age, ROW_NUMBER() over (Order By St_Age) as RN  
+From Student  
+Where St_Age is not null
+--Ex4 : Get the younger student at each department
+Select *
+from 
+(Select St_Fname , St_Age ,  Dept_Id ,
+Row_Number() over (Partition by Dept_Id order by St_age) [RN]
+from Student 
+Where St_Age is not null and Dept_Id is not null) as subquery 
+Where RN = 1
+-------------------------------------------
+-- another syntax
+with subquery as
+(Select St_Id, St_Fname, St_Age, ROW_NUMBER() Over (Order by St_Age Desc) as RN  
+From Student) 
+select * from subquery
+Where RN <= 2  
+-------------------------------------------------------------------------------------
+
+-- 3. Execution Order
+---------------------->
+
+Select St_Fname + ' ' + St_lname as FullName
+From Student
+Where FullName = 'Ahmed Hassan'  --> Invalid
+
+Select St_fname + ' ' + St_lname as FullName
+From Student
+Order By FullName  --> Valid
+
+--SQL order of execution:
+--1. From / JOIN - on  
+--2. Where  
+--3. Group by  
+--4. Having  
+--5. Select  
+--6. Distinct  
+--7. Order by  after select
+--8. Top  
+
+-------------------------------------------------------------------------------------------
+
+-- 4. Union Family
+------------------->
+-- [Union - Union All - Intersect - Except]
+
+-- 4.1. Union : Get All Values From Two Sets Without Duplication of combination of all columns row
+
+Select St_fname From Student
+Union
+Select Ins_Name From Instructor
+
+-- 4.2. Union All : Get All Values From Two Sets With Duplication
+Select St_Fname From Student --return data on 1st select
+Union All
+Select Ins_Name From Instructor
+
+-- 4.3. Intersect : Get Common Values Between Two Sets
+Select St_Fname From Student
+Intersect
+Select Ins_Name From Instructor
+
+-- 4.4. Except : Get The Values That Exist In The First Set But Not In The Other Set
+Select St_Fname From Student
+Except
+Select Ins_Name From Instructor
+--Select i.Salary From Instructor i
+--union select s.St_Fname from Student s
+
+
+--must be same number of column and data type
+
+-------------------------------------------------------------------------------------------
+
+-- 5. Select Into And Insert Based On Select
+--------------------------------------------->
+-- DDL - Structure (Create - Alter - Drop - Select Into)
+
+-- Select Into Examples:
+
+-- Copy Table: Structure With Data:
+Select * Into NewStudentTable01
+From Student
+
+-- Copy Specific Columns With Data:
+Select St_Id, St_Fname, St_Age Into NewStudentTable02
+From Student
+
+-- Copy Table: Structure Without Data (empty table):
+-- Note : To copy only structure (without data), use a condition that always evaluates to false
+
+Select St_Id, St_Fname, St_Age Into NewStudentTable03
+From Student
+Where 1 = 3  -- evaluates to false 
+
+-- Copy Full Structure Without Data (empty table):
+Select * Into NewStudentTable04
+From Student
+Where 1 = 3
+
+
+-- Insert Based On Select
+
+Insert Into NewStudentTable04
+Select * From Student
+
+--Insert Into NewStudentTable04n ()
+--Select * From Student
+Insert Into NewStudentTable03
+Select St_Id, St_Fname, St_Age From Student
+-------------------------------------------------------------------
+--select into  --ddl
+select *into newstd
+from Student -- without constraint 
+
+-------------------------------------------------------------------------------------------
+
+-- 6. Drop Vs Delete Vs Truncate
+
+-- Drop: DDL Used For Deleting Database Or Any DB Objects (Tables, Functions, Views, Stored Procedures, Triggers)
+-- Completely removes the object from the database
+
+-- Delete: DML Used For Deleting One Row Or More
+-- Can use WHERE clause to filter rows
+-- Logs individual row deletions
+-- Can be rolled back
+-- assign log file 
+
+-- Truncate: DDL Used To Delete All Rows By Dropping And Re-Creating The Table
+-- Faster than DELETE for large tables
+-- Cannot use WHERE clause (always removes all rows)
+-- Resets identity counters
+-- Minimal logging
+-- Cannot be rolled back
+
+--------------------------------------------------------------------------------------------------
+-- Schema :
+----------->
+
+-- Server -> Databases
+-- Databases -> Schemas
+-- Schema -> DB Objects (Tables, Functions, Views, SP, Triggers, .....)
+
+-- dbo [Default Schema] --> Database Owner
+
+-- Schema Solved 3 Problems:
+-- 1. You Can't Create More Than One DB Object With The Same Name
+--    [Tables, Views, Functions, SP, Triggers,...]
+-- 2. there is no logical meaning
+-- 3. permissions
+
+--select * from[servername].[DB].[schema].[table name]
+select @@SERVERNAME
+select *from [shawky\MSQLSERVER].[iti].[dbo].[student]
+select * from dbo.Student
+
+--create schema sales
+--create table sales.d()
+--to transfare table from scheema to another
+
+
+--alter schema hr
+--transfare department 
+
+--------------------------------------------------------------------------------------------------
+-- Additional Info :
+
+--Partition By --> can group/split the data by (any input) before doing any operation on it like ranking.
+-----------------------------------------------
+--relationship rule
+--1 cascade delete
+--2 set null 
+-- set defualt
+----self relationship must take action by self
