@@ -1,0 +1,65 @@
+----INDEX--
+--1 cluster index (one for a table)
+--2 non cluster index (on leaf level contain apoiter to actual data)
+
+
+-- cluster index created on pk by defualt 
+--and divide data on pages
+-- if use insert and update more that select dont use index
+use iti
+select OBJECT_ID ('course')
+
+select *
+from sys.indexes
+where object_id=21575115
+-------------------------------------------
+-- to create index
+create clustered index IX_name
+on student (st_fname)--invalid
+go
+create nonclustered index IX_name
+on student (st_fname)--valid 
+
+create nonclustered index IX_Lname
+on student (st_lname desc)
+
+
+create nonclustered index IX_flname
+on student (st_lname desc,st_fname desc)
+
+select *
+from student where sT_fname='ahmed'
+-------------------------------------------
+--indexed view
+go
+create or alter view StudentDepartmentV
+with Schemabinding, encryption--if i change on table Schemabinding doesnot allow or drop view
+as 
+select s.St_Fname,d.Dept_Name,s.St_Id
+from dbo.student s,dbo.Department d
+where s.Dept_Id=d.Dept_Id
+go
+create  unique clustered index Sdindex
+on StudentDepartmentV(st_id)--first index must be unique clustered 
+---------------------------------------------------------
+--tcl
+--transaction,commit ,rollback
+--implicit,explicit
+begin try
+	begin transaction
+	insert into Student(St_Id,St_Fname)
+	values(3,'mo')
+	insert into Student(St_Id,St_Fname)
+	values(4,'eid')
+	save tran p01
+	insert into Student(St_Id,St_Fname)
+	values(4,'rana')
+	insert into Student(St_Id,St_Fname)
+	values(6,'mariem')
+	commit
+end try
+	begin catch
+	rollback po1
+	end catch
+
+
