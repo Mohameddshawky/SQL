@@ -1,0 +1,112 @@
+ --DEMO 1
+ --variable:
+ --global variable
+ -- start with @@
+ --print @@version
+-- select @@SERVERNAME
+----------------------------------------------
+-- local variable
+--start with @
+ --declare @age int      Declare +varname +data type
+ --set @age =10          can set value after declare
+ --select @age
+-- declare @name varchar(20)='ahmed ali' --in single '
+--select @name 
+-- set @name ='omar ahmed'
+-- select @name
+declare @v int
+select @v=5
+print @v
+-------------------------------------------------
+--Data type:size
+--decimal(12,3)number contain 12 bit 3 out of them is after .
+--if i enter more than 3 get an error
+-- numeric(12,3)like decimal but no check
+-- char ,varchar ->var char is dynamic memory and brtter
+-- max biggest memory for char and var char 
+--nchar ,nvarchar to unicode char string
+-----------------------------------------------
+-- 1- DDl (create ,alter ,drob)
+ -- 1.1 create
+ -- to create data base
+  create  database companyg02
+  -- to create table 
+ -- use companyg02  
+  create table employee(
+  ssn int primary key identity(	1,1),
+  fname varchar(30) not null,
+  lname varchar(30),
+  Gender char(1)default 'M',
+  BD date,
+  Dnum int,
+  super_ssn int references employee(ssn)
+  )
+    create table department(
+ Dnum int primary key identity(	1,1),
+  Dname varchar(30) not null,
+  manager_ssn int references employee(ssn),
+  hiring_Date date
+  )
+ create table department_locations(
+ Dnum int references department (	Dnum),
+   location varchar(20) default 'cairo',
+   primary key(Dnum,location)-- composite pk
+  )
+   create table projects(
+  pnum int  primary key identity(	1,1),
+   pname varchar(30) ,
+   location varchar(20) ,
+    city varchar(20) default 'cairo',
+	 Dnum int references department (	Dnum),
+  )
+create table dependents(
+  name varchar(20) unique,
+   BD date ,
+    Gender char(1)default 'M',
+    essn int references employee(ssn),
+	 primary key(name,essn)
+  )
+create table employee_project(
+  essn int references employee(ssn),
+  pnum int references projects(pnum),
+  NOH int,
+   primary key(pnum,essn)
+  )
+  -----------------------------
+-- 1.2 alter ,update
+-- to alter name
+--alter Database resto
+--modify name= resto2
+--use alter with table 
+--1. add(col,constraint)
+--2.Alter(cil,datatype)
+--3.Alter(col,constraint)
+alter table employee
+add test int
+
+alter table employee
+alter column test bigint
+
+alter table employee
+drop column test
+--------------  
+alter table employee
+add foreign key (Dnum)references department(Dnum)
+
+--to drop constraint
+
+alter table employee    --- drop +constraint+constraintname
+drop constraint [DF__employee__Gender__5AEE82B9]
+SELECT 
+    name
+FROM 
+    master.sys.databases
+ORDER BY 
+    name;
+
+	create  table test(
+	    id int 
+		constraint pk primary key(id)
+	)
+	alter table test 
+	drop constraint pk
