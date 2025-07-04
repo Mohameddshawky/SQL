@@ -1,0 +1,233 @@
+--Function
+-- reusability,maintainability
+
+--user defiend function
+--1. scalar function : return one value
+--2. table_valued function
+--2.1 inline table_valued function
+-- 2.2 multi statment valued function[while ,if ,....]
+
+--consists of
+--signature(name,parameters,return type)
+-- body(select ,insert based into select)
+--must return 
+
+--4 steps:
+-- 1.parsing[syntax]
+-- 2.metadata[check col name]
+-- 3.optimization[execution order]
+-- 4.execute
+ 
+--advantage of func
+-- function cached and go to step 4 
+-- reduce network traffic
+-----------------------------------------------------
+--scalar function
+/*
+CREATE FUNCTION function_name ( @parameter_name datatype )
+RETURNS return_datatype
+AS
+BEGIN
+    -- Perform query  --> BODY
+    RETURN;
+END;
+*/
+go
+create or alter function GetStudentNameByID(@st_id int)
+returns nvarchar(50)
+as -- optoinal
+begin
+     declare @name varchar(50)
+
+     select @name= s.St_Fname
+	 from Student s
+	 where s.St_Id=@st_id
+
+	 return @name
+end;
+go
+-- must schema before function
+select dbo.GetStudentNameByID(1)
+print dbo.GetStudentNameByID(10)
+select dbo.GetStudentNameByID('10')
+--------------------------------------------
+go
+create or alter function GetMangerNamebyDeptName(@Deptname varchar(max))
+returns nvarchar(50)
+begin
+     declare @name varchar(50)
+
+     select @name= i.Ins_Name
+	 from  Instructor i,Department d
+	 where i.Ins_Id=d.Dept_Manager and d.Dept_Name=@Deptname
+
+	 return @name
+end;
+go
+
+select dbo.GetMangerNamebyDeptName('java')
+--rename drop and recreate
+--or use sp= sp_rename()
+--------------------------------------------
+--inline  table value function
+--return table
+/*
+CREATE FUNCTION function_Name ( @parameterName dataType )
+RETURNS TABLE
+AS
+RETURN
+(
+    --> Body
+)
+*/
+go
+create or alter function GetinstructorByDeptid(@Did int)
+returns table
+as
+return(
+	select i.Ins_Name as 'name'
+	from Instructor i
+	where i.Dept_Id=@Did
+)
+go
+
+select * from dbo.GetinstructorByDeptid(10)--select from table 
+--------------------------------------------------
+--multi_statment_table func
+/*
+CREATE FUNCTION function_Name (@parameterName dataType)
+RETURNS @TableName TABLE
+(
+    Column1 DataType,
+    Column2 DataType,
+    ...
+)
+AS
+BEGIN
+    --> Body
+    RETURN
+END
+*/
+go
+create or alter function GetStudentNameByFormat(@For nvarchar(max))
+returns @t table(Stid int,stName nvarchar(max))
+as
+ begin
+
+	if @for='first'
+	insert into @t
+	select s.St_Id,s.St_Fname
+	from Student s
+    
+	else if @for='last'
+	insert into @t
+	select s.St_Id,s.St_Lname
+	from Student s
+	
+	else if  @for='full'
+	insert into @t
+	select s.St_Id,CONCAT_ws(' ',s.St_Fname,s.St_Lname)
+	from Student s
+
+	return
+  end
+  go
+  select *from GetStudentNameByFormat('full')
+
+  select *from GetStudentNameByFormat('first')
+
+   --------------------------------------------
+   --view (virtual table)
+   --advan:
+   --1 simplicity
+   --2 consistency
+   --3 security
+   
+   --type of view
+   --1. basic
+   --2. indexed view
+   --3. partitioned view
+   -- contain select only and take no parameter
+   --(create view viewname
+   --as
+   --body)
+   --standard 
+   go
+   create or alter view studentinAlexView
+   as
+   select s.St_Id,s.St_Fname,s.St_Address
+   from Student s
+   where s.St_Address='Alex'
+   go
+
+   select * from studentinAlexView
+
+     go
+   create or alter view studentinCairoView
+   as
+   select s.St_Id,s.St_Fname,s.St_Address
+   from Student s
+   where s.St_Address='Cairo' with check option
+   go
+
+  select * from studentinCairoView
+  --------------------------------------
+  --partition view(contaion 2 select statment)
+  go
+   create or alter view studentinCairoAlexView--can take aliase name ()
+   with encryption
+   as
+   select * from studentinAlexView
+   union
+   select * from studentinCairoView
+   go
+
+   select * from studentinCairoAlexView
+   --------------------------------------
+  exec sp_helptext 'studentinCairoAlexView'
+  ----------------------------------------
+  --view with dml
+
+  --one table
+
+  --insert
+   select *from studentinCairoView
+
+   insert into studentinCairoView
+   values(1234,'rana','cairo')
+
+  --update
+  update studentinCairoView
+  set St_Fname='mariem'
+  where St_Id=1234
+
+  --delete
+  delete from studentinCairoView
+    where St_Id=1234
+	----------------------------------------
+  --two table
+  --canot delete
+--  can insert and update by select column 
+--------------------------------------------
+--view with check
+insert into studentinCairoView
+values(444,'mo','alex')--will accept 
+--must use  with check option 
+insert into studentinCairoView
+values(4442,'mo','alex')
+
+GO
+Create or alter view dbo.StudentsInDepView
+(StudentId , StudentName ,StudentDep ,DeptartmentId ,DepName)
+With encryption
+as
+select S.St_Id , S.St_Fname ,S.Dept_Id, D.Dept_Id , D.Dept_Name
+from Student S , Department D
+Where S.Dept_Id = D.Dept_Id
+GO
+Select * from dbo.StudentsInDepView
+Delete from dbo.StudentsInDepView
+where StudentId = 1
+
+Insert into dbo.StudentsInDepView(StudentId , StudentName)
+Values(2033,'Omar')
