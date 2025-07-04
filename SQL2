@@ -1,0 +1,177 @@
+--Dml
+--1-insert (insert row or more in table)
+--1 simple insert only one row
+--2 row constructore insert more than one row
+
+insert into Employee values('ahmed','ali','M','2-22-2002',null,null)
+
+
+insert into Employee(Lname,Fname)
+values('ahmed','shawky')
+--can insert no data for column if
+-- allow null ,defualt value ,identity
+
+
+--1.2-
+insert into Employee 
+values('ahmed','ali','M','2-22-2002',null,null),
+('mohamed','ali','M','2-22-2006',null,null)
+--------------------------------------
+--2 UPDATE
+
+--Update +table name
+--set column name =value
+--where condition
+--update Employee
+--set gender ='f'
+--where ssn=10
+-----------------------------------
+--3 DELETE
+
+--delete from+ table name
+--where condtion
+
+--data take an input value as string 
+/*
+delete                     drop          
+delete data only from     drop the object 
+table not object          from db
+ truncate like delete but faster 
+ no rollback no where
+*/
+--------------------------------------
+--DQL
+--between val and val :include to value in range
+--not between val and val :get all value without this range
+--in(val,val,val):get all value in these value/ not in
+-- != is the same with <>
+-- = compare with two values and null not a value
+-- use is or is not with null to compare
+
+--select column name
+--from table name
+--select e.Fname+e.Lname + between two string to concate
+--from Employee e
+
+--select e.Fname+e.Lname as'' or[]  aliase name
+--from Employee e
+
+--select [full name]= e.Fname+e.Lname 
+--from Employee e
+--* to get all data from table 
+
+
+--select ----
+--from table name
+-- where condition
+
+--select s.St_Id,S.St_Fname,s.St_Age
+--from Student s
+--where s.St_Age>23
+
+--select s.St_Id,S.St_Fname,s.St_Age
+--from Student s
+--where s.St_Address in('cairo','alex')
+
+--select s.St_Id,S.St_Fname,s.St_Age
+--from Student s
+--where s.St_super is null
+
+---------------------------------------------
+--LIKE
+/*
+_ one character
+% zero or more char
+[] match any sigle char from range  like '[sa]%' his name start with s or a
+[^]match any sigle char not in range like '[^sa]%' his name start with any char no a s
+lika '[a-m]%' start with any char from a to m
+*/
+select s.St_Id,S.St_Fname,s.St_Age
+from Student s
+where s.St_Fname like 'a%'
+
+select s.St_Id,S.St_Fname,s.St_Age
+from Student s
+where s.St_Fname like '_a%'
+
+select s.St_Id,S.St_Fname,s.St_Age
+from Student s
+where s.St_Fname like '[sa]%'
+-------------------------------------------
+--DISTINCT to display data without duplication
+select distinct s.St_Address
+from Student s
+---------------------------------------
+--ORDER BY  asc defualt ,desc
+-- in order by can use column to be order with with
+-- its position in select 1,3
+select  s.*
+from Student s
+order by s.St_Age desc
+
+select  s.St_Id,S.St_Fname,s.St_Lname,s.St_Age
+from Student s
+order by 2,3 
+--------------------------------------------------
+-- JOIN:
+--1.cross join (c product)
+--2.inner join
+--2.outer join
+--2.self join
+-----------------------------------------
+--1.cross join
+
+select  d.Dept_Name,s.St_Fname
+from Department d,Student s
+
+select  d.Dept_Name,s.St_Fname
+from Department d cross join Student s
+
+--------------------------------
+--2.inner join
+
+select  d.Dept_Name,s.St_Fname
+from Department d,Student s
+where d.Dept_Id=s.Dept_Id 
+
+select  d.Dept_Name,s.St_Fname
+from  Department d join Student s
+on d.Dept_Id=s.Dept_Id 
+-------------------------------
+--3.outer join
+-- left 
+select  s.St_Fname,d.Dept_Name
+from Student s left join  Department d 
+on d.Dept_Id=s.Dept_Id 
+
+-- right
+select  s.St_Fname,d.Dept_Name
+from Student s right join  Department d 
+on d.Dept_Id=s.Dept_Id 
+
+-- full
+select  s.St_Fname,d.Dept_Name
+from Student s full join  Department d 
+on d.Dept_Id=s.Dept_Id 
+----------------------------------------
+--self join on  self relationship
+
+select s.St_Fname+' '+s.St_Lname as[student name],sup.St_Fname+' '+sup.St_Lname as[super name]
+from Student s join Student sup
+on sup.St_Id=s.St_super
+----------------------------------------------------------
+--mulitple table join
+select s.St_Fname+' '+s.St_Lname as 'Full name',c.Crs_Name,sc.Grade
+from Student s,Stud_Course sc,Course c
+where s.St_Id=sc.St_Id and
+c.Crs_Id=sc.Crs_Id 
+
+select s.St_Fname+' '+s.St_Lname as 'Full name',c.Crs_Name,sc.Grade
+from Student s,Stud_Course sc,Course c
+where s.St_Id=sc.St_Id and
+c.Crs_Id=sc.Crs_Id and s.St_Address='cairo'
+
+select s.St_Fname+' '+s.St_Lname as 'Full name',c.Crs_Name,sc.Grade
+from Student s join Stud_Course sc
+on s.St_Id=sc.St_Id
+join Course c on c.Crs_Id=sc.Crs_Id 
